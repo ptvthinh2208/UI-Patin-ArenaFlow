@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ArenaFlow - PATIN PRO</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Màn hình Đăng nhập -->
+  <div id="login-view" class="view active">
+    <div class="login-box fade-up">
+      <div class="login-header">
+        <div class="login-logo">
+          <img src="logo.png?v=1.2" alt="Logo"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"
+            style="width:24px;height:24px;display:none;">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+          </svg>
+        </div>
+        <p>Hệ thống điều khiển thi đấu Patin</p>
+      </div>
+      <div class="form-group">
+        <label>Tên đăng nhập</label>
+        <input type="text" id="username" placeholder="Nhập username" value="admin">
+      </div>
+      <div class="form-group">
+        <label>Mật khẩu</label>
+        <input type="password" id="password" placeholder="Nhập password" value="123456">
+      </div>
+      <button class="btn-primary" onclick="app.login()">ĐĂNG NHẬP</button>
+      <p style="margin-top: 20px; font-size: 11px; color: var(--text-3);">Copyright 2026 © <a
+          href="https://atscada.com">atscada.com</a></p>
+    </div>
+  </div>
+
+  <!-- Bố cục chính của App -->
+  <div id="main-layout" class="view">
+    <div class="ambient ambient-1"></div>
+    <div class="ambient ambient-2"></div>
+
+    <nav class="topnav">
+      <div class="nav-brand">
+        <div class="nav-logo">
+          <img src="logo.png?v=1.2" alt="Logo"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"
+            style="width:20px;height:20px;display:none;">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+          </svg>
+        </div>
+      </div>
+      <div class="nav-status">
+        <div class="status-dot"></div>
+        <span>ESP32 Online</span>
+      </div>
+    </nav>
+
+    <!-- TRANG CHỦ / DASHBOARD -->
+    <div id="dashboard" class="page active">
+      <div class="hero fade-up">
+        <div class="hero-eyebrow">⚡ Hệ thống điều khiển thi đấu</div>
+        <div class="hero-title">Quản lý<br><em>Patin Racing</em></div>
+        <div class="hero-sub">Điều phối giải đấu, theo dõi thời gian và kết quả thi đấu trực tiếp</div>
+      </div>
+
+      <div class="clock-strip fade-up delay-1">
+        <div>
+          <div class="clock-label">Thời gian hệ thống</div>
+          <div class="clock-time" id="home-clock">00:00:00</div>
+        </div>
+        <div class="clock-date" id="home-date">--</div>
+      </div>
+
+      <div class="section-header fade-up delay-2">
+        <span class="section-title">Chức năng</span>
+        <div class="section-line"></div>
+      </div>
+
+      <div class="feature-grid">
+        <div class="feature-card fade-up delay-2" style="--card-accent:var(--green);--card-icon-bg:var(--green-dim);"
+          onclick="app.openRaceView('training')">
+          <div class="card-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 2" />
+            </svg>
+          </div>
+          <div class="card-name">Tập luyện</div>
+          <div class="card-desc">Bấm giờ tự do, không giới hạn lượt</div>
+          <div class="card-arrow">Bắt đầu <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg></div>
+        </div>
+
+        <div class="feature-card fade-up delay-3" style="--card-accent:var(--accent);--card-icon-bg:var(--accent-dim);"
+          onclick="app.navigate('pro')">
+          <div class="card-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M8 21h8M12 17v4M17 4H7l-2 7h12l-2-7zM5 11s1 4 7 4 7-4 7-4" />
+            </svg>
+          </div>
+          <div class="card-name">Thi đấu</div>
+          <div class="card-desc">Giải đấu chuyên nghiệp, bracket tự động</div>
+          <div class="card-arrow">Vào giải <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg></div>
+        </div>
+
+        <div class="feature-card fade-up delay-4" style="--card-accent:var(--blue);--card-icon-bg:var(--blue-dim);"
+          onclick="app.navigate('add-tournament')">
+          <div class="card-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="12" y1="11" x2="12" y2="17" />
+              <polyline points="9 14 12 17 15 14" />
+            </svg>
+          </div>
+          <div class="card-name">Import CSV</div>
+          <div class="card-desc">Tải danh sách thí sinh từ file</div>
+          <div class="card-arrow">Tải lên <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg></div>
+        </div>
+
+        <div class="feature-card fade-up delay-4" style="--card-accent:var(--purple);--card-icon-bg:var(--purple-dim);"
+          onclick="app.navigate('bracket'); app.generateBracket();">
+          <div class="card-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <rect x="2" y="3" width="6" height="4" rx="1" />
+              <rect x="16" y="3" width="6" height="4" rx="1" />
+              <rect x="9" y="10" width="6" height="4" rx="1" />
+              <rect x="9" y="17" width="6" height="4" rx="1" />
+              <path d="M5 7v3.5a3.5 3.5 0 0 0 3.5 3.5H12M19 7v3.5A3.5 3.5 0 0 1 15.5 14H12M12 14v3" />
+            </svg>
+          </div>
+          <div class="card-name">Bracket</div>
+          <div class="card-desc">Sơ đồ cây đấu trực quan</div>
+          <div class="card-arrow">Xem sơ đồ <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg></div>
+        </div>
+
+        <div class="feature-card wide fade-up delay-5"
+          style="--card-accent:#b03a0a;--card-icon-bg:rgba(176,58,10,0.09);" onclick="app.showToast('Sắp ra mắt')">
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div class="card-icon-wrap" style="flex-shrink:0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#b03a0a" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="22 4 13.5 12.5 8.5 7.5 2 14" />
+                <polyline points="16 4 22 4 22 10" />
+              </svg>
+            </div>
+            <div style="flex:1;">
+              <div class="card-name" style="color:#b03a0a;">Bảng xếp hạng</div>
+              <div class="card-desc">Kết quả & thống kê thời gian thực của toàn bộ thí sinh qua các vòng đấu</div>
+              <div class="card-arrow" style="color:#b03a0a;">Xem kết quả <svg viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-card wide fade-up delay-6"
+          style="--card-accent:var(--text-2);--card-icon-bg:rgba(90,97,128,0.08);" onclick="app.navigate('settings')">
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div class="card-icon-wrap" style="flex-shrink:0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </div>
+            <div style="flex:1;">
+              <div class="card-name">Cài đặt hệ thống</div>
+              <div class="card-desc">Cấu hình WiFi, bảng LED và thông số ESP32</div>
+              <div class="card-arrow">Cấu hình <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2.5" stroke-linecap="round">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THI ĐẤU (PRO) — 3 BƯỚC -->
+    <div id="pro" class="page">
+      <div class="subpage-header">
+        <div class="back-btn" onclick="app.navigate('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </div>
+        <div class="subpage-title">🏆 Thi đấu chuyên nghiệp</div>
+      </div>
+      <div class="subpage-content">
+        <div class="mode-card" style="--mc-color:var(--accent-rich);--mc-bg:var(--accent-dim);"
+          onclick="app.navigate('add-tournament')">
+          <div class="mode-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="12" y1="11" x2="12" y2="17" />
+              <polyline points="9 14 12 17 15 14" />
+            </svg>
+          </div>
+          <div class="mode-info">
+            <div class="mode-name">Bước 1 — Import thí sinh</div>
+            <div class="mode-desc">Tải file CSV danh sách VĐV, xem trước và xác nhận</div>
+          </div>
+          <div class="mode-chevron"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg></div>
+        </div>
+        <div class="mode-card" style="--mc-color:var(--blue);--mc-bg:var(--blue-dim);"
+          onclick="app.openRaceView('qualifying')">
+          <div class="mode-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 2" />
+            </svg>
+          </div>
+          <div class="mode-info">
+            <div class="mode-name">Bước 2 — Vòng loại (1/16)</div>
+            <div class="mode-desc">Thi lần lượt cá nhân, bấm giờ, chọn Top 16</div>
+          </div>
+          <div class="mode-chevron"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg></div>
+        </div>
+        <div class="mode-card" style="--mc-color:var(--purple);--mc-bg:var(--purple-dim);"
+          onclick="app.navigate('bracket'); app.generateBracket();">
+          <div class="mode-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <rect x="2" y="3" width="6" height="4" rx="1" />
+              <rect x="16" y="3" width="6" height="4" rx="1" />
+              <rect x="9" y="10" width="6" height="4" rx="1" />
+              <path d="M5 7v3.5a3.5 3.5 0 0 0 3.5 3.5H12M19 7v3.5A3.5 3.5 0 0 1 15.5 14H12M12 14v3" />
+            </svg>
+          </div>
+          <div class="mode-info">
+            <div class="mode-name">Bước 3 — Vòng 1/8 → Chung kết</div>
+            <div class="mode-desc">Ghép cặp đối kháng: Hạng 1 ⚔️ Hạng 16, bracket tự động</div>
+          </div>
+          <div class="mode-chevron"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg></div>
+        </div>
+        <div
+          style="background:var(--accent-dim);border:1px solid rgba(196,134,10,0.18);border-radius:12px;padding:15px 17px;">
+          <div
+            style="font-size:10px;font-weight:600;letter-spacing:1.5px;color:var(--accent);text-transform:uppercase;margin-bottom:7px;">
+            Ghi chú thi đấu</div>
+          <div style="font-size:12px;color:var(--text-2);line-height:1.7;">
+            Hệ thống tự động ghép cặp sau khi có Top 16.<br>Hạng 1 ⚔️ Hạng 16 | Hạng 2 ⚔️ Hạng 15...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RACE VIEW — MOBILE FIRST -->
+    <div id="race-view" class="page race-page">
+
+      <!-- HEADER: VĐV INFO + NAV -->
+      <div class="rv-header">
+        <div class="rv-header-left">
+          <button class="rv-icon-btn" onclick="app.navigate(app.state.raceMode==='training'?'dashboard':'pro')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              width="20" height="20">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div class="rv-title" id="rv-title">Tập luyện</div>
+        </div>
+        <div class="rv-header-right" id="rv-nav-wrap" style="display:none;">
+          <button class="rv-icon-btn" onclick="app.changeCandidate(-2)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              width="18" height="18">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <span class="rv-nav-counter" id="race-nav-status">1-2/32</span>
+          <button class="rv-icon-btn" onclick="app.changeCandidate(2)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              width="18" height="18">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- LANES: 2 LÀN ĐUA -->
+      <div class="rv-lanes-wrap">
+        <!-- LÀN 1 -->
+        <div class="rv-lane-m lane-1">
+          <div class="rv-lane-tag">1</div>
+          <div class="rv-lane-info">
+            <div class="rv-m-name" id="l1-name">VĐV Làn 1</div>
+            <div class="rv-m-time" id="l1-time">00:00<span class="rv-m-ms" id="l1-ms">.00</span></div>
+            <div class="rv-m-status" id="l1-status">CHỜ BẮT ĐẦU</div>
+          </div>
+          <div class="rv-pen-wrap">
+            <div class="rv-pen-label">PENALTY</div>
+            <div class="rv-pen-grid">
+              <button class="rv-p-btn rv-p-clr" onclick="app.setPenalty(1,0)">CLR</button>
+              <button class="rv-p-btn" onclick="app.addPenalty(1,1)">+1</button>
+              <button class="rv-p-btn" onclick="app.addPenalty(1,2)">+2</button>
+              <button class="rv-p-btn" onclick="app.addPenalty(1,3)">+3</button>
+              <button class="rv-p-btn" onclick="app.addPenalty(1,4)">+4</button>
+              <button class="rv-p-btn rv-p-dq" onclick="app.setPenalty(1,'DQ')">DQ</button>
+            </div>
+            <div class="rv-pen-total">Lỗi: <span id="l1-pen">0</span> điểm</div>
+          </div>
+        </div>
+
+        <!-- LANE DIVIDER -->
+        <div class="rv-lane-sep"></div>
+
+        <!-- LÀN 2 -->
+        <div class="rv-lane-m lane-2">
+          <div class="rv-lane-tag lane-2-tag">2</div>
+          <div class="rv-lane-info">
+            <div class="rv-m-name" id="l2-name">VĐV Làn 2</div>
+            <div class="rv-m-time" id="l2-time">00:00<span class="rv-m-ms" id="l2-ms">.00</span></div>
+            <div class="rv-m-status" id="l2-status">CHỜ BẮT ĐẦU</div>
+          </div>
+          <div class="rv-pen-wrap">
+            <div class="rv-pen-label">PENALTY</div>
+            <div class="rv-pen-grid">
+              <button class="rv-p-btn rv-p-clr" onclick="app.setPenalty(2,0)">CLR</button>
+              <button class="rv-p-btn" onclick="app.addPenalty(2,1)">+1</button>
+              <button class="rv-p-btn" onclick="app.addPenalty(2,2)">+2</button>
+              <button class="rv-p-btn" onclick="app.addPenalty(2,3)">+3</button>
+              <button class="rv-p-btn" onclick="app.addPenalty(2,4)">+4</button>
+              <button class="rv-p-btn rv-p-dq" onclick="app.setPenalty(2,'DQ')">DQ</button>
+            </div>
+            <div class="rv-pen-total">Lỗi: <span id="l2-pen">0</span> điểm</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM ACTION BAR (FIXED) -->
+      <div class="rv-bottom-bar">
+        <button class="rv-bb-btn rv-bb-secondary" onclick="app.resetRace()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18"
+            height="18">
+            <polyline points="1 4 1 10 7 10" />
+            <path d="M3.51 15a9 9 0 1 0 .49-4.5" />
+          </svg>
+          <span>Reset</span>
+        </button>
+        <button class="rv-bb-btn rv-bb-secondary" onclick="app.swapLanes()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18"
+            height="18">
+            <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
+          </svg>
+          <span>Swap</span>
+        </button>
+        <button class="rv-bb-btn rv-bb-pause" id="rv-pause-btn" onclick="app.pauseRace()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18"
+            height="18">
+            <rect x="6" y="4" width="4" height="16" />
+            <rect x="14" y="4" width="4" height="16" />
+          </svg>
+          <span>Pause</span>
+        </button>
+        <button class="rv-bb-btn rv-bb-start" id="rv-start-btn" onclick="app.startRace()">
+          <svg viewBox="0 0 24 24" fill="white" stroke="none" width="18" height="18">
+            <polygon points="5,3 19,12 5,21" />
+          </svg>
+          <span>START</span>
+        </button>
+        <button class="rv-bb-btn rv-bb-finish" id="btn-custom-lock" onclick="app.customLock()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18"
+            height="18">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <span>CHỐT</span>
+        </button>
+        <button class="rv-bb-btn rv-bb-next" id="btn-rv-next" onclick="app.changeCandidate(2)" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18"
+            height="18">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+          <span>Next</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- IMPORT GIẢI ĐẤU (CSV) -->
+    <div id="add-tournament" class="page">
+      <div class="subpage-header">
+        <div class="back-btn" onclick="app.navigate('pro')">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </div>
+        <div class="subpage-title">📁 Import Giải đấu</div>
+      </div>
+      <div class="subpage-content">
+        <div class="card">
+          <div class="form-group">
+            <label>Tên giải đấu:</label>
+            <input type="text" id="tournament-name" placeholder="VD: Giải Trượt Patin Arena 2026">
+          </div>
+          <div class="form-group">
+            <label>Chọn file CSV danh sách VĐV:</label>
+            <input type="file" id="csv-file" accept=".csv" onchange="app.processCSV()"
+              style="padding: 10px 0; border: none;">
+            <p style="font-size: 11px; color: var(--text-3); margin-top: 5px;">Định dạng: Tên, Ngày sinh (VD: Nguyen Van
+              A, 20/05/2010)</p>
+          </div>
+          <div id="csv-preview" class="hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin: 15px 0;">
+              <p style="font-weight: 600; font-size: 13px; margin:0;">Xem trước: <span id="total-candidates">0</span>
+                VĐV</p>
+              <button class="btn-primary" onclick="app.saveTournament()"
+                style="width:auto; padding: 10px 20px; margin:0; font-size:13px;">LƯU & BẮT ĐẦU</button>
+            </div>
+            <div class="table-container">
+              <table id="candidate-table">
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Họ và Tên</th>
+                    <th>Ngày sinh</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CÀI ĐẶT -->
+    <div id="settings" class="page">
+      <div class="subpage-header">
+        <div class="back-btn" onclick="app.navigate('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </div>
+        <div class="subpage-title">⚙️ Cài đặt Hệ thống</div>
+      </div>
+      <div class="subpage-content">
+        <div class="card">
+          <div class="form-group"><label>SSID WiFi:</label><input type="text" id="ssid" value="PatinArena_WiFi"></div>
+          <div class="form-group"><label>Mật khẩu WiFi:</label><input type="password" id="wifi-pass" value="********">
+          </div>
+          <div class="form-group"><label>Số lượng VĐV tối đa:</label><input type="number" id="max-players" value="100">
+          </div>
+          <button class="btn-primary" onclick="app.saveSettings()">LƯU CẤU HÌNH</button>
+        </div>
+        <button class="btn-primary" onclick="app.logout()"
+          style="background: var(--red-dim); color: #ff4757; margin-top: 10px;">ĐĂNG XUẤT</button>
+      </div>
+    </div>
+
+    <!-- SƠ ĐỒ BRACKET -->
+    <div id="bracket" class="page race-page">
+      <div class="rv-header">
+        <div class="rv-header-left">
+          <button class="rv-icon-btn" onclick="app.navigate('dashboard')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              width="20" height="20">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div class="rv-title">SƠ ĐỒ THI ĐẤU</div>
+        </div>
+      </div>
+      <div class="bk-page-content">
+        <div id="bracket-container" class="bk-container">
+          <div class="bk-empty">Chưa có dữ liệu VĐV.<br>Vui lòng hoàn thành <b>Vòng loại</b> trước.</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="bottom-nav">
+      <div class="bnav-item active" data-target="dashboard" onclick="app.navigate('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+        <span>Trang chủ</span>
+      </div>
+      <div class="bnav-item" data-target="race-view" onclick="app.openRaceView('training')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 2" />
+        </svg>
+        <span>Tập luyện</span>
+      </div>
+      <div class="bnav-item" data-target="pro" onclick="app.navigate('pro')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 21h8M12 17v4M17 4H7l-2 7h12l-2-7zM5 11s1 4 7 4 7-4 7-4" />
+        </svg>
+        <span>Thi đấu</span>
+      </div>
+      <div class="bnav-item" data-target="bracket" onclick="app.navigate('bracket'); app.generateBracket();">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="6" height="4" rx="1" />
+          <rect x="16" y="3" width="6" height="4" rx="1" />
+          <rect x="9" y="10" width="6" height="4" rx="1" />
+          <rect x="9" y="17" width="6" height="4" rx="1" />
+          <path d="M5 7v3.5a3.5 3.5 0 0 0 3.5 3.5H12M19 7v3.5A3.5 3.5 0 0 1 15.5 14H12M12 14v3" />
+        </svg>
+        <span>Bracket</span>
+      </div>
+    </nav>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- MODAL XÁC NHẬN RESET -->
+  <div id="modal-confirm" class="modal-overlay">
+    <div class="modal-box fade-up">
+      <div class="modal-icon">⚠️</div>
+      <div class="modal-title">Xác nhận Reset?</div>
+      <div class="modal-desc">Hành động này sẽ xóa toàn bộ thời gian hiện tại và đưa hệ thống về trạng thái chờ.</div>
+      <div class="modal-actions">
+        <button class="btn-modal btn-cancel" onclick="app.closeResetModal()">HỦY</button>
+        <button class="btn-modal btn-confirm" onclick="app.confirmReset()">RESET</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
