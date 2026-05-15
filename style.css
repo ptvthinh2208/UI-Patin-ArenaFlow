@@ -606,6 +606,10 @@ th { background: #f8fafc; color: var(--text-3); font-weight: 600; text-transform
   content: ''; position: absolute; inset: 0; pointer-events: none;
   background: radial-gradient(ellipse at 50% 0%, rgba(60,120,255,0.12) 0%, transparent 70%);
 }
+.solo-mode .lane-2 { display: none !important; }
+.solo-mode .rv-lane-sep { display: none !important; }
+.solo-mode .lane-1 { border-right: none; }
+
 
 /* LANE TAG (số góc trên trái) */
 .rv-lane-tag {
@@ -645,6 +649,60 @@ th { background: #f8fafc; color: var(--text-3); font-weight: 600; text-transform
   background: rgba(255,190,30,0.18); color: #ffcc40;
   border: 1.5px solid rgba(255,190,30,0.45);
 }
+
+/* CANDIDATE QUICK-PICK PANEL */
+.rv-cand-panel {
+  flex-shrink: 0; display: none;
+  border-top: 1px solid rgba(100,150,255,0.15);
+  background: rgba(12,20,45,0.85);
+}
+.rv-cand-panel.active { display: block; }
+.rv-cand-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 12px;
+  border-bottom: 1px solid rgba(100,150,255,0.1);
+}
+.rv-cand-title {
+  font-family: 'Be Vietnam Pro', sans-serif; font-size: 10px; font-weight: 700;
+  color: rgba(150,190,255,0.6); letter-spacing: 1px; text-transform: uppercase;
+}
+.rv-cand-list {
+  max-height: 175px; overflow-y: auto; padding: 4px 6px;
+  display: flex; flex-direction: column; gap: 3px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin; scrollbar-color: rgba(100,150,255,0.3) transparent;
+  overscroll-behavior: contain;
+}
+.rv-cand-list:empty { display: none; }
+.rv-cand-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; border-radius: 8px; cursor: pointer;
+  background: rgba(30,50,100,0.3); border: 1px solid rgba(80,120,220,0.15);
+  transition: all 0.15s ease; font-size: 12px; min-height: 28px;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.rv-cand-item:active { background: rgba(50,80,160,0.45); }
+.rv-cand-item.active {
+  background: rgba(60,120,255,0.2); border-color: rgba(80,140,255,0.5);
+  box-shadow: 0 0 8px rgba(60,120,255,0.15);
+}
+.rv-cand-item .ci-rank {
+  font-family: 'Rajdhani', sans-serif; font-weight: 800; font-size: 11px;
+  color: rgba(150,190,255,0.5); min-width: 24px;
+}
+.rv-cand-item .ci-name {
+  flex: 1; color: rgba(180,200,255,0.6); font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rv-cand-item .ci-time {
+  font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 11px;
+  color: rgba(150,180,220,0.4); min-width: 46px; text-align: right;
+}
+.rv-cand-item.done .ci-name { color: #50e8a0; }
+.rv-cand-item.done .ci-time { color: #50e8a0; }
+.rv-cand-item.active .ci-name { color: #fff; }
+.rv-cand-item.active .ci-rank { color: #80c0ff; }
 
 /* PENALTY AREA */
 .rv-pen-wrap {
@@ -730,7 +788,7 @@ th { background: #f8fafc; color: var(--text-3); font-weight: 600; text-transform
 .modal-actions { display: flex; gap: 12px; }
 .btn-modal {
   flex: 1; padding: 14px; border-radius: 12px; border: none;
-  font-family: 'Rajdhani', sans-serif; font-weight: 800; font-size: 15px;
+  font-family: 'Be Vietnam Pro', sans-serif; font-weight: 700; font-size: 14px;
   cursor: pointer; transition: 0.12s;
 }
 .btn-cancel { background: rgba(100,150,255,0.1); color: #80a0ff; }

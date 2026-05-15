@@ -7,9 +7,10 @@ const app = {
     // Stopwatch state
     swRunning: false,
     swStart: 0,
-    swElapsed: 0,
-    swRAF: null,
-    lapCount: 0
+    lapCount: 0,
+    tournamentName: "Giải đấu trượt Patin chuyên nghiệp",
+    lane1Idx: 0,
+    lane2Idx: 1
   },
 
   // ── KHỞI TẠO ──
@@ -25,13 +26,17 @@ const app = {
       const data = JSON.parse(saved);
       this.state.currentCandidates = data.candidates || [];
       this.state.top16 = data.top16 || [];
+      this.state.bracketSize = data.bracketSize || 16;
+      this.state.tournamentName = data.tournamentName || "";
     }
   },
 
   saveToLocal() {
     const data = {
       candidates: this.state.currentCandidates,
-      top16: this.state.top16
+      top16: this.state.top16,
+      bracketSize: this.state.bracketSize || 16,
+      tournamentName: this.state.tournamentName
     };
     localStorage.setItem('patin_pro_state', JSON.stringify(data));
   },
@@ -79,6 +84,11 @@ const app = {
     const activeNav = document.querySelector(`.bnav-item[data-target="${navId}"]`);
     if (activeNav) activeNav.classList.add('active');
 
+    // Nếu quay lại trang Pro (Import) mà đã có dữ liệu thì hiện lại preview
+    if (pageId === 'pro' && this.state.currentCandidates.length > 0) {
+      this.renderCSVPreview();
+    }
+
     window.scrollTo(0, 0);
   },
 
@@ -115,21 +125,61 @@ const app = {
   },
 
   swapLanes() {
-    const n1 = document.getElementById('l1-name').innerText;
-    const n2 = document.getElementById('l2-name').innerText;
-    const p1 = document.getElementById('l1-pen').innerText;
-    const p2 = document.getElementById('l2-pen').innerText;
-    document.getElementById('l1-name').innerText = n2;
-    document.getElementById('l2-name').innerText = n1;
-    document.getElementById('l1-pen').innerText = p2;
-    document.getElementById('l2-pen').innerText = p1;
+    if (this.state.layoutMode === 'solo') return;
+
+    if (this.state.raceMode === 'training') {
+      const n1 = document.getElementById('l1-name').innerText;
+      const n2 = document.getElementById('l2-name').innerText;
+      const p1 = document.getElementById('l1-pen').innerText;
+      const p2 = document.getElementById('l2-pen').innerText;
+      document.getElementById('l1-name').innerText = n2;
+      document.getElementById('l2-name').innerText = n1;
+      document.getElementById('l1-pen').innerText = p2;
+      document.getElementById('l2-pen').innerText = p1;
+    } else {
+      this.saveCurrentDrafts();
+      const tempIdx = this.state.lane1Idx;
+      this.state.lane1Idx = this.state.lane2Idx;
+      this.state.lane2Idx = tempIdx;
+      this.renderLanes();
+    }
+
     this.showToast('Đã hoán đổi 2 làn');
   },
 
-  openRaceView(mode) {
+  showModeModal(mode) {
+    if (mode === 'training') {
+      document.getElementById('modal-mode-select-training').classList.add('active');
+    } else {
+      document.getElementById('modal-mode-select-qualifying').classList.add('active');
+    }
+  },
+
+  closeModeModal(layout, mode) {
+    if (mode === 'training') {
+      document.getElementById('modal-mode-select-training').classList.remove('active');
+    } else {
+      document.getElementById('modal-mode-select-qualifying').classList.remove('active');
+    }
+    this.openRaceView(mode, layout);
+  },
+
+  openRaceView(mode, layout = 'pk') {
     this.state.raceMode = mode;
+    this.state.layoutMode = layout;
+    this.state.isBracketMatch = false; // Luôn reset về false khi mở chế độ bình thường
     const navTarget = (mode === 'training') ? 'race-view' : 'pro';
     this.navigate('race-view', navTarget);
+
+    const lanesWrap = document.querySelector('.rv-lanes-wrap');
+    const swapBtn = document.getElementById('btn-swap-lanes');
+    if (layout === 'solo') {
+      lanesWrap.classList.add('solo-mode');
+      if (swapBtn) swapBtn.style.display = 'none';
+    } else {
+      lanesWrap.classList.remove('solo-mode');
+      if (swapBtn) swapBtn.style.display = 'flex';
+    }
 
     // Reset display
     ['l1', 'l2'].forEach(id => {
@@ -147,6 +197,8 @@ const app = {
       document.getElementById('l2-status').innerText = 'Chờ bắt đầu';
       document.getElementById('btn-custom-lock').style.display = 'flex';
       document.getElementById('btn-rv-next').style.display = 'none';
+      const candPanel = document.getElementById('rv-cand-panel');
+      if (candPanel) { candPanel.classList.remove('active'); candPanel.style.display = 'none'; }
     } else {
       if (this.state.currentCandidates.length === 0) {
         this.showToast('Danh sách VĐV đang trống! Hãy Import CSV trước.');
@@ -154,82 +206,195 @@ const app = {
       }
       document.getElementById('rv-title').innerText = 'VÒNG LOẠI';
       document.getElementById('rv-nav-wrap').style.display = 'flex';
-      document.getElementById('btn-custom-lock').style.display = 'flex';
       document.getElementById('btn-rv-next').style.display = 'flex';
-      this.state.raceIndex = 0;
+      const candPanel = document.getElementById('rv-cand-panel');
+      if (candPanel) { candPanel.style.display = ''; }
+      this.state.lane1Idx = 0;
+      this.state.lane2Idx = 1;
       this.state.raceDraft = JSON.parse(localStorage.getItem('qualifying_draft') || '{}');
       this.renderLanes();
     }
   },
 
+  handlePrevCandidate() {
+    const offset = this.state.layoutMode === 'solo' ? -1 : -2;
+    this.changeCandidate(offset);
+  },
+
+  handleNextCandidate() {
+    const offset = this.state.layoutMode === 'solo' ? 1 : 2;
+    this.changeCandidate(offset);
+  },
+
   changeCandidate(offset) {
     this.saveCurrentDrafts();
-    const maxIdx = this.state.currentCandidates.length;
-    let newIdx = this.state.raceIndex + offset;
+    const maxIdx = this.state.currentCandidates.length - 1;
+    let n1 = this.state.lane1Idx + offset;
+    let n2 = this.state.lane2Idx + offset;
 
-    if (newIdx < 0) newIdx = 0;
-    // Dừng ở maxIdx-1 để cặp cuối vẫn hiển thị được (cần c1 tồn tại)
-    if (newIdx >= maxIdx - 1) {
-      newIdx = maxIdx - 1;
-      this.showToast('Đã đến cặp cuối cùng!');
-    }
+    if (n1 < 0) { n1 = 0; n2 = 1; }
+    if (n1 > maxIdx) n1 = maxIdx;
+    if (n2 > maxIdx) n2 = maxIdx;
 
-    this.state.raceIndex = newIdx;
+    this.state.lane1Idx = n1;
+    this.state.lane2Idx = n2;
     this.renderLanes();
     this.resetRaceLogic();
   },
 
   saveCurrentDrafts() {
     if (this.state.raceMode !== 'qualifying' || this.state.currentCandidates.length === 0) return;
-    const idx = this.state.raceIndex;
 
     const tSec = this.state.swElapsed / 1000;
-    
-    // Đọc điểm penalty (số nguyên) rồi quy đổi sang giây: 1 điểm = 0.2s
+
+    // Đọc điểm penalty (số nguyên) và lưu nguyên gốc vào draft
     const pen1Raw = document.getElementById('l1-pen').innerText;
     const pen2Raw = document.getElementById('l2-pen').innerText;
-    const pen1 = pen1Raw === 'DQ' ? 9999 : Math.round((parseFloat(pen1Raw) || 0) * 0.2 * 100) / 100;
-    const pen2 = pen2Raw === 'DQ' ? 9999 : Math.round((parseFloat(pen2Raw) || 0) * 0.2 * 100) / 100;
+    const pen1 = pen1Raw === 'DQ' ? 'DQ' : parseInt(pen1Raw) || 0;
+    const pen2 = pen2Raw === 'DQ' ? 'DQ' : parseInt(pen2Raw) || 0;
 
-    if (this.state.currentCandidates[idx]) {
+    const i1 = this.state.lane1Idx;
+    if (this.state.currentCandidates[i1]) {
       // Chỉ lưu time nếu có chạy, để tránh đè time = 0 lên time cũ
-      if (tSec > 0 || !this.state.raceDraft[idx]) {
-        this.state.raceDraft[idx] = { time: tSec, penalty: pen1 };
+      if (tSec > 0 || !this.state.raceDraft[i1]) {
+        this.state.raceDraft[i1] = { time: tSec, penalty: pen1 };
       } else {
-        this.state.raceDraft[idx].penalty = pen1;
+        this.state.raceDraft[i1].penalty = pen1;
       }
     }
-    if (this.state.currentCandidates[idx + 1]) {
-      if (tSec > 0 || !this.state.raceDraft[idx + 1]) {
-        this.state.raceDraft[idx + 1] = { time: tSec, penalty: pen2 };
+
+    const i2 = this.state.lane2Idx;
+    if (this.state.layoutMode !== 'solo' && this.state.currentCandidates[i2]) {
+      if (tSec > 0 || !this.state.raceDraft[i2]) {
+        this.state.raceDraft[i2] = { time: tSec, penalty: pen2 };
       } else {
-        this.state.raceDraft[idx + 1].penalty = pen2;
+        this.state.raceDraft[i2].penalty = pen2;
       }
     }
     localStorage.setItem('qualifying_draft', JSON.stringify(this.state.raceDraft));
   },
 
   renderLanes() {
-    const idx = this.state.raceIndex;
+    const idx1 = this.state.lane1Idx;
+    const idx2 = this.state.lane2Idx;
     const maxIdx = this.state.currentCandidates.length;
 
-    document.getElementById('race-nav-status').innerText = `${idx + 1}-${Math.min(idx + 2, maxIdx)} / ${maxIdx}`;
+    if (this.state.layoutMode === 'solo') {
+      document.getElementById('race-nav-status').innerText = `${idx1 + 1} / ${maxIdx}`;
+    } else {
+      document.getElementById('race-nav-status').innerText = `${idx1 + 1} & ${idx2 + 1} / ${maxIdx}`;
+    }
 
-    const c1 = this.state.currentCandidates[idx];
-    const c2 = this.state.currentCandidates[idx + 1];
+    const c1 = this.state.currentCandidates[idx1];
+    const c2 = this.state.currentCandidates[idx2];
 
-    const d1 = this.state.raceDraft[idx] || { time: 0, penalty: 0 };
-    const d2 = this.state.raceDraft[idx + 1] || { time: 0, penalty: 0 };
+    const d1 = this.state.raceDraft[idx1] || { time: 0, penalty: 0 };
+    const d2 = this.state.raceDraft[idx2] || { time: 0, penalty: 0 };
 
-    document.getElementById('l1-name').innerText = c1 ? c1.name : '---';
+    const formatName = (c) => {
+      if (!c) return '---';
+      if (!c.dob) return c.name;
+      return `<div style="line-height:1.2;">${c.name}</div><div style="font-size:11.5px; color:rgba(180,200,255,0.65); font-weight:600; margin-top:1px;">${c.dob}</div>`;
+    };
+
+    document.getElementById('l1-name').innerHTML = formatName(c1);
     document.getElementById('l1-pen').innerText = d1.penalty;
 
-    document.getElementById('l2-name').innerText = c2 ? c2.name : '---';
+    document.getElementById('l2-name').innerHTML = formatName(c2);
     document.getElementById('l2-pen').innerText = d2.penalty;
 
     // Nếu có time đã chạy trước đó, set l1-time
     this.updateLaneTimeDisplay('l1', d1.time * 1000);
     this.updateLaneTimeDisplay('l2', d2.time * 1000);
+
+    // Render danh sách VĐV bấm chọn nhanh
+    this.renderCandidateList();
+  },
+
+  renderCandidateList() {
+    const panel = document.getElementById('rv-cand-panel');
+    const listEl1 = document.getElementById('l1-cand-list');
+    const listEl2 = document.getElementById('l2-cand-list');
+    const title2 = document.getElementById('rv-cand-title-2');
+
+    if (this.state.raceMode === 'training' || this.state.isBracketMatch || this.state.currentCandidates.length === 0) {
+      panel.classList.remove('active');
+      panel.style.display = 'none';
+      listEl1.innerHTML = '';
+      listEl2.innerHTML = '';
+      return;
+    }
+
+    panel.classList.add('active');
+    panel.style.display = '';
+    const isSolo = this.state.layoutMode === 'solo';
+    listEl2.style.display = isSolo ? 'none' : 'flex';
+    title2.style.display = isSolo ? 'none' : 'block';
+
+    const candidates = this.state.currentCandidates;
+    const drafts = this.state.raceDraft || {};
+    const i1 = this.state.lane1Idx;
+    const i2 = this.state.lane2Idx;
+
+    const formatTime = (sec) => {
+      if (!sec || sec <= 0) return '00:00.00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      const ms = Math.floor((sec * 100) % 100);
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
+    };
+
+    const buildHtml = (targetLane) => {
+      return candidates.map((c, i) => {
+        const d = drafts[i] || { time: 0, penalty: 0 };
+        const hasTimed = d.time > 0;
+        const isActive = (targetLane === 1) ? (i === i1) : (i === i2);
+        let cls = 'rv-cand-item';
+        if (isActive) cls += ' active';
+        else if (hasTimed) cls += ' done';
+        return `<div class="${cls}" onclick="app.jumpToCandidate(${targetLane}, ${i})">
+          <span class="ci-rank">${i + 1}.</span>
+          <span class="ci-name">${c.name}${c.dob ? ` <span style="font-size:10.5px; color:rgba(150,190,255,0.55); font-weight:500;">(${c.dob})</span>` : ''}</span>
+          <span class="ci-time">${hasTimed ? formatTime(d.time) : '---'}</span>
+        </div>`;
+      }).join('');
+    };
+
+    listEl1.innerHTML = buildHtml(1);
+    if (!isSolo) listEl2.innerHTML = buildHtml(2);
+
+    // Scroll VĐV đang active vào giữa vùng nhìn thấy
+    setTimeout(() => {
+      const activeEl1 = listEl1.querySelector('.rv-cand-item.active');
+      if (activeEl1) activeEl1.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      if (!isSolo) {
+        const activeEl2 = listEl2.querySelector('.rv-cand-item.active');
+        if (activeEl2) activeEl2.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }, 50);
+  },
+
+  jumpToCandidate(lane, targetIdx) {
+    if (this.state.raceMode === 'training') return;
+
+    if (lane === 1) {
+      if (this.state.layoutMode !== 'solo' && targetIdx === this.state.lane2Idx) {
+        this.showToast('VĐV này đang thi đấu ở Làn 2!');
+        return;
+      }
+      this.saveCurrentDrafts();
+      this.state.lane1Idx = targetIdx;
+    } else {
+      if (targetIdx === this.state.lane1Idx) {
+        this.showToast('VĐV này đang thi đấu ở Làn 1!');
+        return;
+      }
+      this.saveCurrentDrafts();
+      this.state.lane2Idx = targetIdx;
+    }
+
+    this.renderLanes();
+    this.resetRaceLogic();
   },
 
   updateLaneTimeDisplay(laneId, elapsedMs) {
@@ -244,24 +409,18 @@ const app = {
     }
   },
 
-  addPenalty(lane, points) {
+  setPenalty(lane, points) {
     const penEl = document.getElementById(`l${lane}-pen`);
-    let current = parseFloat(penEl.innerText) || 0;
-    const newVal = Math.round((current + points) * 10) / 10;
-    penEl.innerText = newVal;
-    const secs = (points * 0.2).toFixed(1);
-    this.showToast(`Làn ${lane}: +${secs}s (${points} lỗi)`);
-    if (this.state.raceMode === 'qualifying') this.saveCurrentDrafts();
-  },
-
-  setPenalty(lane, val) {
-    const penEl = document.getElementById(`l${lane}-pen`);
-    if (val === 'DQ') {
+    if (points === 'DQ') {
       penEl.innerText = 'DQ';
       this.showToast(`Làn ${lane}: DQ - Loại khỏi vòng đấu!`);
-    } else {
+    } else if (points === 0) {
       penEl.innerText = 0;
       this.showToast(`Làn ${lane}: Đã xóa penalty`);
+    } else {
+      penEl.innerText = points;
+      const secs = (points * 0.2).toFixed(1);
+      this.showToast(`Làn ${lane}: Lỗi: ${points} điểm (+${secs}s)`);
     }
     if (this.state.raceMode === 'qualifying') this.saveCurrentDrafts();
   },
@@ -340,7 +499,7 @@ const app = {
     clearInterval(this.state.pollInterval);
     this.state.swRunning = false;
     this.state.swElapsed = 0;
-    
+
     console.log('[LED CMD] Đã gửi lệnh RESET xuống cho bảng LED');
 
     ['l1', 'l2'].forEach(id => {
@@ -354,65 +513,94 @@ const app = {
 
   customLock() {
     if (this.state.raceMode === 'qualifying') {
-      // TODO: Gửi lệnh CHỐT xuống bảng LED
       console.log('[LED CMD] Đã gửi lệnh CHỐT xuống cho bảng LED');
-      this.completeQualifying();
+      // Hiện modal chọn vòng đấu thay vì chốt luôn Top 16
+      document.getElementById('modal-round-select').classList.add('active');
     } else {
       console.log('[LED CMD] Đã gửi lệnh CHỐT xuống cho bảng LED');
       this.showToast('Đã ghi nhận lệnh CHỐT!');
     }
   },
 
-  completeQualifying() {
+  completeQualifying(topN) {
+    document.getElementById('modal-round-select').classList.remove('active');
     this.saveCurrentDrafts();
     const drafts = this.state.raceDraft;
     let results = [];
 
     this.state.currentCandidates.forEach((c, index) => {
       const d = drafts[index] || { time: 0, penalty: 0 };
-      results.push({ name: c.name, total: d.time + d.penalty, rank: 0 });
+      const penaltySeconds = d.penalty === 'DQ' ? 9999 : (parseInt(d.penalty) || 0) * 0.2;
+      results.push({ name: c.name, dob: c.dob, total: d.time + penaltySeconds, rank: 0, originalIndex: index });
     });
 
     results.forEach(r => { if (r.total === 0) r.total = 9999; });
-    results.sort((a, b) => a.total - b.total);
+    results.sort((a, b) => {
+      if (a.total === b.total) return a.originalIndex - b.originalIndex;
+      return a.total - b.total;
+    });
 
-    this.state.top16 = results.slice(0, 16).map((r, i) => {
+    const topResults = results.slice(0, topN).map((r, i) => {
       r.rank = i + 1;
       return r;
     });
 
+    this.state.top16 = topResults;
+    this.state.bracketSize = topN;
+
     this.saveToLocal();
-    this.showToast('Đã chọn xong Top 16. Đang tạo Bracket...');
+    const roundNames = { 16: 'Vòng 1/16', 8: 'Tứ kết', 4: 'Bán kết', 2: 'Chung kết' };
+    this.showToast(`Đã chọn Top ${topN}. Tạo Bracket ${roundNames[topN]}...`);
     this.navigate('bracket');
     this.generateBracket();
   },
 
   generateBracket() {
     const container = document.getElementById('bracket-container');
+
     if (!this.state.top16 || this.state.top16.length === 0) {
-      container.innerHTML = `<div class="bk-empty">Chưa có dữ liệu.<br>Vui lòng hoàn thành <b>Vòng loại</b> trước.</div>`;
+      if (this.state.currentCandidates && this.state.currentCandidates.length > 0) {
+        // Tự động bật modal chọn chế độ chốt để nó tự động lấy từ trên xuống
+        document.getElementById('modal-round-select').classList.add('active');
+      } else {
+        container.innerHTML = `<div class="bk-empty">Chưa có dữ liệu vận động viên.<br>Vui lòng Import CSV trước.</div>`;
+      }
       return;
     }
 
-    // Pad to 16 if needed
+    const topData = this.state.top16;
+    const bracketSize = this.state.bracketSize || 16;
+
+    // Pad VĐV nếu thiếu
     const seeds = [];
-    for (let i = 1; i <= 16; i++) {
-      seeds[i] = this.state.top16[i - 1] || { name: '---', rank: i };
+    for (let i = 1; i <= bracketSize; i++) {
+      seeds[i] = topData[i - 1] || { name: '---', rank: i };
     }
 
-    // Standard single-elimination bracket order
-    const r16Matches = [
-      [seeds[1], seeds[16]], [seeds[8],  seeds[9]],
-      [seeds[4], seeds[13]], [seeds[5],  seeds[12]],
-      [seeds[3], seeds[14]], [seeds[6],  seeds[11]],
-      [seeds[7], seeds[10]], [seeds[2],  seeds[15]],
-    ];
+    // Hàm tạo các cặp đấu theo thứ tự chuẩn single-elimination
+    const buildSeededMatches = (n, s) => {
+      if (n === 2) return [[s[1], s[2]]];
+      if (n === 4) return [[s[1], s[4]], [s[3], s[2]]];
+      if (n === 8) return [
+        [s[1], s[8]], [s[4], s[5]],
+        [s[3], s[6]], [s[7], s[2]],
+      ];
+      // n === 16
+      return [
+        [s[1], s[16]], [s[8], s[9]],
+        [s[4], s[13]], [s[5], s[12]],
+        [s[3], s[14]], [s[6], s[11]],
+        [s[7], s[10]], [s[2], s[15]],
+      ];
+    };
+
+    const matches = buildSeededMatches(bracketSize, seeds);
 
     const pm = (p1, p2) => `
-      <div class="bk-match" onclick="app.startBracketMatch('${p1.name}', '${p2.name}')">
-        <div class="bk-player"><span class="bk-seed">#${p1.rank}</span><span class="bk-name">${p1.name}</span></div>
+      <div class="bk-match" onclick="app.startBracketMatch(${p1.rank}, ${p2.rank})">
+        <div class="bk-player"><span class="bk-seed">#${p1.rank}</span><span class="bk-name" style="display:flex; flex-direction:column;"><span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p1.name}</span>${p1.dob ? `<span style="font-size:8.5px; color:rgba(150,180,255,0.6); font-weight:500; margin-top:-2px;">${p1.dob}</span>` : ''}</span></div>
         <div class="bk-sep"></div>
-        <div class="bk-player"><span class="bk-seed">#${p2.rank}</span><span class="bk-name">${p2.name}</span></div>
+        <div class="bk-player"><span class="bk-seed">#${p2.rank}</span><span class="bk-name" style="display:flex; flex-direction:column;"><span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p2.name}</span>${p2.dob ? `<span style="font-size:8.5px; color:rgba(150,180,255,0.6); font-weight:500; margin-top:-2px;">${p2.dob}</span>` : ''}</span></div>
       </div>`;
 
     const tbd = () => `
@@ -422,77 +610,114 @@ const app = {
         <div class="bk-player bk-tbd"><span class="bk-name">TBD</span></div>
       </div>`;
 
-    container.innerHTML = `
-      <div class="bwc-bracket bk-std">
-        <!-- Vòng 1/16 -->
-        <div class="bwc-col bwc-r16">
-          <div class="bk-round-label">Vòng 1/16 (Vòng 16)</div>
-          <div class="bwc-group bwc-group-left">${pm(...r16Matches[0])}${pm(...r16Matches[1])}</div>
-          <div class="bwc-group bwc-group-left">${pm(...r16Matches[2])}${pm(...r16Matches[3])}</div>
-          <div class="bwc-group bwc-group-left">${pm(...r16Matches[4])}${pm(...r16Matches[5])}</div>
-          <div class="bwc-group bwc-group-left">${pm(...r16Matches[6])}${pm(...r16Matches[7])}</div>
-        </div>
-        
-        <!-- Tứ Kết -->
-        <div class="bwc-col bwc-qf">
-          <div class="bk-round-label">VÒNG 1/8 (Tứ kết)</div>
-          <div class="bwc-group bwc-group-left">${tbd()}${tbd()}</div>
-          <div class="bwc-group bwc-group-left">${tbd()}${tbd()}</div>
-        </div>
-        
-        <!-- Bán Kết (Chung kết 1 & 2) -->
-        <div class="bwc-col bwc-sf">
-          <div class="bk-round-label">BÁN KẾT</div>
-          <div class="bwc-group bwc-group-left bwc-sf-group">${tbd()}${tbd()}</div>
-        </div>
-        
-        <!-- Chung Kết -->
-        <div class="bwc-col bwc-final">
-          <div class="bk-round-label">CHUNG KẾT</div>
-          ${tbd()}
-        </div>
-        
-        <!-- Quán Quân -->
-        <div class="bwc-col bwc-champ-col">
-          <div class="bk-round-label">QUÁN QUÂN</div>
-          <div class="bwc-champion">🥇 QUÁN QUÂN</div>
-        </div>
-      </div>`;
+    // Xây dựng các cột bracket theo từng kích thước
+    const roundLabels = {
+      16: 'Vòng 1/16',
+      8: 'Tứ kết (1/8)',
+      4: 'Bán kết',
+      2: 'Chung kết'
+    };
+
+    let html = '<div class="bwc-bracket bk-std">';
+
+    // ── Cột đầu tiên: các cặp đấu thật ──
+    const firstRoundLabel = roundLabels[bracketSize];
+    html += `<div class="bwc-col bwc-r16"><div class="bk-round-label">${firstRoundLabel}</div>`;
+
+    if (bracketSize >= 8) {
+      // Nhóm 2 cặp đấu vào 1 group
+      for (let g = 0; g < matches.length; g += 2) {
+        html += `<div class="bwc-group bwc-group-left">${pm(...matches[g])}${pm(...matches[g + 1])}</div>`;
+      }
+    } else if (bracketSize === 4) {
+      html += `<div class="bwc-group bwc-group-left">${pm(...matches[0])}${pm(...matches[1])}</div>`;
+    } else {
+      // bracketSize === 2: 1 trận duy nhất
+      html += pm(...matches[0]);
+    }
+    html += '</div>';
+
+    // ── Các cột tiếp theo (TBD) ──
+    let remaining = bracketSize / 2;
+    const nextRounds = [];
+    if (bracketSize === 16) nextRounds.push({ n: 8, label: 'Tứ kết (1/8)', cls: 'bwc-qf' });
+    if (bracketSize >= 8) nextRounds.push({ n: 4, label: 'Bán kết', cls: 'bwc-sf' });
+    if (bracketSize >= 4) nextRounds.push({ n: 2, label: 'Chung kết', cls: 'bwc-final' });
+
+    for (const round of nextRounds) {
+      html += `<div class="bwc-col ${round.cls}"><div class="bk-round-label">${round.label}</div>`;
+      const numMatches = round.n / 2;
+      if (numMatches >= 2) {
+        for (let g = 0; g < numMatches; g += 2) {
+          html += `<div class="bwc-group bwc-group-left">${tbd()}${g + 1 < numMatches ? tbd() : ''}</div>`;
+        }
+      } else {
+        html += tbd();
+      }
+      html += '</div>';
+    }
+
+
+    html += '</div>';
+
+    container.innerHTML = html;
   },
 
-  startBracketMatch(name1, name2) {
+  startBracketMatch(rank1, rank2) {
+    const p1 = this.state.top16.find(x => x.rank === rank1) || { name: '---', dob: '' };
+    const p2 = this.state.top16.find(x => x.rank === rank2) || { name: '---', dob: '' };
+    const name1 = p1.name;
+    const name2 = p2.name;
+
     if (name1 === '---' || name2 === '---') {
       this.showToast('Chưa đủ vận động viên cho trận đấu này!');
       return;
     }
-    
-    // Set candidates manually for this specific match
-    this.state.currentCandidates = [
-      { name: name1 },
-      { name: name2 }
-    ];
-    this.state.raceIndex = 0;
-    
+
+    // Set lanes manually for this specific match without destroying the global array
+    this.state.lane1Idx = this.state.currentCandidates.findIndex(x => x.name === name1) || 0;
+    this.state.lane2Idx = this.state.currentCandidates.findIndex(x => x.name === name2) || 1;
+
     // Switch to race view
     this.state.raceMode = 'qualifying'; // Reuse qualifying UI
+    this.state.layoutMode = 'pk'; // Bracket is always PK mode
+    this.state.isBracketMatch = true; // Đánh dấu là đang đấu bracket
     this.navigate('race-view', 'pro');
-    
+
+    document.querySelector('.rv-lanes-wrap').classList.remove('solo-mode');
+    const swapBtn = document.getElementById('btn-swap-lanes');
+    if (swapBtn) swapBtn.style.display = 'flex';
+
     // Reset display and set names
     ['l1', 'l2'].forEach(id => {
       document.getElementById(`${id}-time`).firstChild.textContent = '00:00';
       document.getElementById(`${id}-ms`).textContent = '.00';
       document.getElementById(`${id}-pen`).innerText = '0';
-      this.setStatus(id, 'waiting');
+      this.setStatus(id, 'Đang chờ bắt đầu');
     });
-    
+
     document.getElementById('rv-title').innerText = 'THI ĐẤU ĐỐI KHÁNG';
     document.getElementById('rv-nav-wrap').style.display = 'none';
     document.getElementById('btn-custom-lock').style.display = 'flex';
     document.getElementById('btn-rv-next').style.display = 'none';
-    
-    document.getElementById('l1-name').innerText = name1;
-    document.getElementById('l2-name').innerText = name2;
-    
+
+    // Ẩn triệt để panel bằng inline style (chống mọi lỗi ghi đè class)
+    const candPanel = document.getElementById('rv-cand-panel');
+    if (candPanel) {
+      candPanel.classList.remove('active');
+      candPanel.setAttribute('style', 'display: none !important;');
+      document.getElementById('l1-cand-list').innerHTML = '';
+      document.getElementById('l2-cand-list').innerHTML = '';
+    }
+
+    const formatMatchName = (p) => {
+      if (!p.dob) return p.name;
+      return `<div style="line-height:1.2;">${p.name}</div><div style="font-size:11.5px; color:rgba(180,200,255,0.65); font-weight:600; margin-top:1px;">${p.dob}</div>`;
+    };
+
+    document.getElementById('l1-name').innerHTML = formatMatchName(p1);
+    document.getElementById('l2-name').innerHTML = formatMatchName(p2);
+
     this.showToast(`Bắt đầu trận đấu: ${name1} vs ${name2}`);
   },
 
@@ -527,12 +752,17 @@ const app = {
       <tr><td>${i + 1}</td><td><strong>${c.name}</strong></td><td>${c.dob}</td></tr>
     `).join('');
     document.getElementById('total-candidates').innerText = this.state.currentCandidates.length;
+    if (this.state.tournamentName) {
+      document.getElementById('tournament-name').value = this.state.tournamentName;
+    }
     document.getElementById('csv-preview').classList.remove('hidden');
   },
 
   saveTournament() {
     let name = document.getElementById('tournament-name').value.trim();
     if (!name) name = "Giải Đấu Cấp Tốc";
+    this.state.tournamentName = name;
+
     if (this.state.currentCandidates.length === 0) {
       this.showToast('Danh sách VĐV đang trống, hãy Import CSV!');
       return;
@@ -541,7 +771,7 @@ const app = {
     // Xóa draft cũ khi load giải mới
     localStorage.removeItem('qualifying_draft');
     this.showToast('Dã lưu! Bắt đầu Vòng loại...');
-    this.openRaceView('qualifying');
+    this.openRaceView('qualifying', 'solo');
   },
 
   saveSettings() {

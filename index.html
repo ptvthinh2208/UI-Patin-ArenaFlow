@@ -85,7 +85,7 @@
 
       <div class="feature-grid">
         <div class="feature-card fade-up delay-2" style="--card-accent:var(--green);--card-icon-bg:var(--green-dim);"
-          onclick="app.openRaceView('training')">
+          onclick="app.showModeModal('training')">
           <div class="card-icon-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"
               stroke-linejoin="round">
@@ -224,7 +224,7 @@
             </svg>
           </div>
           <div class="mode-info">
-            <div class="mode-name">Bước 1 — Import thí sinh</div>
+            <div class="mode-name">Giai đoạn 1 — Thêm danh sách vận động viên</div>
             <div class="mode-desc">Tải file CSV danh sách VĐV, xem trước và xác nhận</div>
           </div>
           <div class="mode-chevron"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
@@ -232,7 +232,7 @@
             </svg></div>
         </div>
         <div class="mode-card" style="--mc-color:var(--blue);--mc-bg:var(--blue-dim);"
-          onclick="app.openRaceView('qualifying')">
+          onclick="app.showModeModal('qualifying')">
           <div class="mode-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"
               stroke-linejoin="round">
@@ -241,8 +241,8 @@
             </svg>
           </div>
           <div class="mode-info">
-            <div class="mode-name">Bước 2 — Vòng loại (1/16)</div>
-            <div class="mode-desc">Thi lần lượt cá nhân, bấm giờ, chọn Top 16</div>
+            <div class="mode-name">Giai đoạn 2 — Vòng loại trực tiếp</div>
+            <div class="mode-desc">Thi lần lượt cá nhân, bấm giờ, phân loại hạt giống</div>
           </div>
           <div class="mode-chevron"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
               <path d="M9 18l6-6-6-6" />
@@ -260,8 +260,8 @@
             </svg>
           </div>
           <div class="mode-info">
-            <div class="mode-name">Bước 3 — Vòng 1/8 → Chung kết</div>
-            <div class="mode-desc">Ghép cặp đối kháng: Hạng 1 ⚔️ Hạng 16, bracket tự động</div>
+            <div class="mode-name">Giai đoạn 3 — Vòng đấu loại trực tiếp</div>
+            <div class="mode-desc">Ghép cặp đối kháng: Hạt giống 1 vs Hạt giống 16, bracket tự động</div>
           </div>
           <div class="mode-chevron"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
               <path d="M9 18l6-6-6-6" />
@@ -294,14 +294,14 @@
           <div class="rv-title" id="rv-title">Tập luyện</div>
         </div>
         <div class="rv-header-right" id="rv-nav-wrap" style="display:none;">
-          <button class="rv-icon-btn" onclick="app.changeCandidate(-2)">
+          <button class="rv-icon-btn" onclick="app.handlePrevCandidate()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
               width="18" height="18">
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </button>
           <span class="rv-nav-counter" id="race-nav-status">1-2/32</span>
-          <button class="rv-icon-btn" onclick="app.changeCandidate(2)">
+          <button class="rv-icon-btn" onclick="app.handleNextCandidate()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
               width="18" height="18">
               <path d="M9 18l6-6-6-6" />
@@ -324,10 +324,10 @@
             <div class="rv-pen-label">PENALTY</div>
             <div class="rv-pen-grid">
               <button class="rv-p-btn rv-p-clr" onclick="app.setPenalty(1,0)">CLR</button>
-              <button class="rv-p-btn" onclick="app.addPenalty(1,1)">+1</button>
-              <button class="rv-p-btn" onclick="app.addPenalty(1,2)">+2</button>
-              <button class="rv-p-btn" onclick="app.addPenalty(1,3)">+3</button>
-              <button class="rv-p-btn" onclick="app.addPenalty(1,4)">+4</button>
+              <button class="rv-p-btn" onclick="app.setPenalty(1,1)">1</button>
+              <button class="rv-p-btn" onclick="app.setPenalty(1,2)">2</button>
+              <button class="rv-p-btn" onclick="app.setPenalty(1,3)">3</button>
+              <button class="rv-p-btn" onclick="app.setPenalty(1,4)">4</button>
               <button class="rv-p-btn rv-p-dq" onclick="app.setPenalty(1,'DQ')">DQ</button>
             </div>
             <div class="rv-pen-total">Lỗi: <span id="l1-pen">0</span> điểm</div>
@@ -349,14 +349,26 @@
             <div class="rv-pen-label">PENALTY</div>
             <div class="rv-pen-grid">
               <button class="rv-p-btn rv-p-clr" onclick="app.setPenalty(2,0)">CLR</button>
-              <button class="rv-p-btn" onclick="app.addPenalty(2,1)">+1</button>
-              <button class="rv-p-btn" onclick="app.addPenalty(2,2)">+2</button>
-              <button class="rv-p-btn" onclick="app.addPenalty(2,3)">+3</button>
-              <button class="rv-p-btn" onclick="app.addPenalty(2,4)">+4</button>
+              <button class="rv-p-btn" onclick="app.setPenalty(2,1)">1</button>
+              <button class="rv-p-btn" onclick="app.setPenalty(2,2)">2</button>
+              <button class="rv-p-btn" onclick="app.setPenalty(2,3)">3</button>
+              <button class="rv-p-btn" onclick="app.setPenalty(2,4)">4</button>
               <button class="rv-p-btn rv-p-dq" onclick="app.setPenalty(2,'DQ')">DQ</button>
             </div>
             <div class="rv-pen-total">Lỗi: <span id="l2-pen">0</span> điểm</div>
           </div>
+        </div>
+      </div>
+
+      <!-- DANH SÁCH VĐV BẤM CHỌN NHANH -->
+      <div class="rv-cand-panel" id="rv-cand-panel">
+        <div class="rv-cand-header" style="display:flex; gap:10px;">
+          <span class="rv-cand-title" id="rv-cand-title-1" style="flex:1; text-align:center;">📋 CHỌN VĐV LÀN 1</span>
+          <span class="rv-cand-title" id="rv-cand-title-2" style="flex:1; text-align:center;">📋 CHỌN VĐV LÀN 2</span>
+        </div>
+        <div style="display:flex; gap:10px; padding:0 6px;">
+          <div class="rv-cand-list" id="l1-cand-list" style="flex:1;"></div>
+          <div class="rv-cand-list" id="l2-cand-list" style="flex:1;"></div>
         </div>
       </div>
 
@@ -370,7 +382,7 @@
           </svg>
           <span>Reset</span>
         </button>
-        <button class="rv-bb-btn rv-bb-secondary" onclick="app.swapLanes()">
+        <button class="rv-bb-btn rv-bb-secondary" id="btn-swap-lanes" onclick="app.swapLanes()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18"
             height="18">
             <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
@@ -398,7 +410,7 @@
           </svg>
           <span>CHỐT</span>
         </button>
-        <button class="rv-bb-btn rv-bb-next" id="btn-rv-next" onclick="app.changeCandidate(2)" style="display:none;">
+        <button class="rv-bb-btn rv-bb-next" id="btn-rv-next" onclick="app.handleNextCandidate()" style="display:none;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18"
             height="18">
             <path d="M5 12h14M13 6l6 6-6 6" />
@@ -422,7 +434,7 @@
         <div class="card">
           <div class="form-group">
             <label>Tên giải đấu:</label>
-            <input type="text" id="tournament-name" placeholder="VD: Giải Trượt Patin Arena 2026">
+            <input type="text" id="tournament-name" value="Giải đấu trượt Patin chuyên nghiệp">
           </div>
           <div class="form-group">
             <label>Chọn file CSV danh sách VĐV:</label>
@@ -507,7 +519,7 @@
         </svg>
         <span>Trang chủ</span>
       </div>
-      <div class="bnav-item" data-target="race-view" onclick="app.openRaceView('training')">
+      <div class="bnav-item" data-target="race-view" onclick="app.showModeModal('training')">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="9" />
           <path d="M12 7v5l3 2" />
@@ -548,7 +560,69 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- MODAL CHỌN GIAO DIỆN TẬP LUYỆN -->
+  <div id="modal-mode-select-training" class="modal-overlay">
+    <div class="modal-box fade-up">
+      <div class="modal-icon">⚙️</div>
+      <div class="modal-title">Chọn giao diện tập luyện</div>
+      <div class="modal-desc">Bạn muốn mở giao diện Đấu Solo hay Đấu PK?</div>
+      <div class="modal-actions">
+        <button class="btn-modal btn-cancel" onclick="app.closeModeModal('solo', 'training')">ĐẤU SOLO</button>
+        <button class="btn-modal btn-confirm" style="background:var(--accent);box-shadow:0 4px 15px rgba(255,160,0,0.3)"
+          onclick="app.closeModeModal('pk', 'training')">ĐẤU PK</button>
+      </div>
+      <button class="btn-modal"
+        style="width:100%;margin-top:10px;background:rgba(255,255,255,0.05);color:var(--text-2);"
+        onclick="document.getElementById('modal-mode-select-training').classList.remove('active')">ĐÓNG</button>
+    </div>
+  </div>
+
+  <!-- MODAL CHỌN GIAO DIỆN THI ĐẤU -->
+  <div id="modal-mode-select-qualifying" class="modal-overlay">
+    <div class="modal-box fade-up">
+      <div class="modal-icon">⚙️</div>
+      <div class="modal-title">Chọn giao diện thi đấu vòng loại</div>
+      <div class="modal-desc">Bạn muốn hiển thị 1 Line hay 2 Line?</div>
+      <div class="modal-actions">
+        <button class="btn-modal btn-cancel" onclick="app.closeModeModal('solo', 'qualifying')">1 LINE</button>
+        <button class="btn-modal btn-confirm" style="background:var(--accent);box-shadow:0 4px 15px rgba(255,160,0,0.3)"
+          onclick="app.closeModeModal('pk', 'qualifying')">2 LINE</button>
+      </div>
+      <button class="btn-modal"
+        style="width:100%;margin-top:10px;background:rgba(255,255,255,0.05);color:var(--text-2);"
+        onclick="document.getElementById('modal-mode-select-qualifying').classList.remove('active')">ĐÓNG</button>
+    </div>
+  </div>
+
+  <!-- MODAL CHỌN VÒNG ĐẤU SAU VÒNG LOẠI -->
+  <div id="modal-round-select" class="modal-overlay">
+    <div class="modal-box fade-up" style="max-width:360px;">
+      <div class="modal-icon">🏆</div>
+      <div class="modal-title">Chọn vòng đấu</div>
+      <div class="modal-desc">Chọn số lượng VĐV vào vòng tiếp theo.<br>Hệ thống sẽ tự tạo sơ đồ Bracket phù hợp.</div>
+      <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;margin-bottom:12px;">
+        <button class="btn-modal btn-round-opt" onclick="app.completeQualifying(16)"
+          style="background:rgba(100,150,255,0.12);color:#80b0ff;border:1px solid rgba(100,150,255,0.3);">
+          <span style="font-size:20px;display:block;">16</span>
+          <span style="font-size:11px;opacity:0.7;">Vòng 1/16</span>
+        </button>
+        <button class="btn-modal btn-round-opt" onclick="app.completeQualifying(8)"
+          style="background:rgba(0,200,150,0.12);color:#50e8b0;border:1px solid rgba(0,200,150,0.3);">
+          <span style="font-size:20px;display:block;">8</span>
+          <span style="font-size:11px;opacity:0.7;">Tứ kết</span>
+        </button>
+        <button class="btn-modal btn-round-opt" onclick="app.completeQualifying(4)"
+          style="background:rgba(220,160,0,0.12);color:#f0c030;border:1px solid rgba(220,160,0,0.3);">
+          <span style="font-size:20px;display:block;">4</span>
+          <span style="font-size:11px;opacity:0.7;">Bán kết</span>
+        </button>
+      </div>
+      <button class="btn-modal" style="width:100%;background:rgba(255,255,255,0.05);color:var(--text-2);"
+        onclick="document.getElementById('modal-round-select').classList.remove('active')">ĐÓNG</button>
+    </div>
+  </div>
+
+  <script src="app.js?v=2.1"></script>
 </body>
 
 </html>
