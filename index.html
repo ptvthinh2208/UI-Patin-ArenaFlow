@@ -128,7 +128,7 @@
               <polyline points="9 14 12 17 15 14" />
             </svg>
           </div>
-          <div class="card-name">Import CSV</div>
+          <div class="card-name">Thêm danh sách VĐV</div>
           <div class="card-desc">Tải danh sách thí sinh từ file</div>
           <div class="card-arrow">Tải lên <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
               stroke-linecap="round">
@@ -372,6 +372,16 @@
         </div>
       </div>
 
+      <!-- PANEL GHI NHẬN THỜI GIAN ĐUA ĐỒNG HÀNG -->
+      <div class="rv-cand-panel" id="rv-lap-panel" style="display:none; flex-direction:column;">
+        <div class="rv-cand-header" style="justify-content:center;">
+          <span class="rv-cand-title" style="flex:none;">📋 BẢNG GHI NHẬN THỜI GIAN (20 VỊ TRÍ)</span>
+        </div>
+        <div class="rv-lap-list" id="lap-list"
+          style="padding:8px 12px; overflow-y:auto; max-height:185px; display:flex; flex-direction:column; gap:6px;">
+        </div>
+      </div>
+
       <!-- BOTTOM ACTION BAR (FIXED) -->
       <div class="rv-bottom-bar">
         <button class="rv-bb-btn rv-bb-secondary" onclick="app.resetRace()">
@@ -532,15 +542,14 @@
         </svg>
         <span>Thi đấu</span>
       </div>
-      <div class="bnav-item" data-target="bracket" onclick="app.navigate('bracket'); app.generateBracket();">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="3" width="6" height="4" rx="1" />
-          <rect x="16" y="3" width="6" height="4" rx="1" />
-          <rect x="9" y="10" width="6" height="4" rx="1" />
-          <rect x="9" y="17" width="6" height="4" rx="1" />
-          <path d="M5 7v3.5a3.5 3.5 0 0 0 3.5 3.5H12M19 7v3.5A3.5 3.5 0 0 1 15.5 14H12M12 14v3" />
+      <div class="bnav-item" data-target="mass-start" onclick="app.openMassStart()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+          <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
         </svg>
-        <span>Bracket</span>
+        <span>Time lapse</span>
       </div>
     </nav>
   </div>
@@ -622,7 +631,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=2.1"></script>
+  <script src="app.js?v=2.3"></script>
 </body>
 
 </html>

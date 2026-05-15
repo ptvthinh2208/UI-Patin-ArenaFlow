@@ -7,10 +7,12 @@ const app = {
     // Stopwatch state
     swRunning: false,
     swStart: 0,
+    swElapsed: 0,
     lapCount: 0,
     tournamentName: "Giải đấu trượt Patin chuyên nghiệp",
     lane1Idx: 0,
-    lane2Idx: 1
+    lane2Idx: 1,
+    lapRecords: []
   },
 
   // ── KHỞI TẠO ──
@@ -188,6 +190,12 @@ const app = {
       document.getElementById(`${id}-pen`).innerText = '0';
     });
 
+    const lapPanel = document.getElementById('rv-lap-panel');
+    if (lapPanel) lapPanel.style.display = 'none';
+
+    // Khôi phục hiển thị Penalty cho chế độ bình thường
+    document.querySelectorAll('.rv-pen-wrap').forEach(el => el.style.display = '');
+
     if (mode === 'training') {
       document.getElementById('rv-title').innerText = 'TẬP LUYỆN';
       document.getElementById('rv-nav-wrap').style.display = 'none';
@@ -214,6 +222,90 @@ const app = {
       this.state.raceDraft = JSON.parse(localStorage.getItem('qualifying_draft') || '{}');
       this.renderLanes();
     }
+  },
+
+  openMassStart() {
+    this.state.raceMode = 'mass-start';
+    this.state.layoutMode = 'solo';
+    this.state.isBracketMatch = false;
+    this.state.lapRecords = [];
+
+    this.navigate('race-view', 'mass-start');
+
+    document.querySelector('.rv-lanes-wrap').classList.add('solo-mode');
+
+    const swapBtn = document.getElementById('btn-swap-lanes');
+    if (swapBtn) swapBtn.style.display = 'none';
+
+    document.getElementById('l1-time').firstChild.textContent = '00:00';
+    document.getElementById('l1-ms').textContent = '.00';
+    document.getElementById('l1-pen').innerText = '0';
+    this.setStatus('l1', 'Chờ bắt đầu');
+
+    document.getElementById('rv-title').innerText = 'TIME LAPSE';
+    document.getElementById('rv-nav-wrap').style.display = 'none';
+    document.getElementById('btn-custom-lock').style.display = 'none';
+    document.getElementById('btn-rv-next').style.display = 'none';
+    document.getElementById('l1-name').innerText = 'Đồng hồ Tổng';
+
+    const candPanel = document.getElementById('rv-cand-panel');
+    if (candPanel) { candPanel.classList.remove('active'); candPanel.setAttribute('style', 'display: none !important;'); }
+
+    const lapPanel = document.getElementById('rv-lap-panel');
+    if (lapPanel) lapPanel.style.display = 'flex';
+
+    // Ẩn bảng Penalty trong chế độ Đua đồng hàng
+    document.querySelectorAll('.rv-pen-wrap').forEach(el => el.style.display = 'none');
+
+    this.renderLapList();
+  },
+
+  recordLap() {
+    if (this.state.raceMode !== 'mass-start') return;
+    if (!this.state.swRunning) {
+      this.showToast('Vui lòng bấm START trước!');
+      return;
+    }
+    if (this.state.lapRecords.length >= 20) {
+      this.showToast('Đã ghi nhận tối đa 20 mốc thời gian!');
+      return;
+    }
+
+    const ms = this.state.swElapsed;
+    const s = Math.floor(ms / 1000) % 60;
+    const m = Math.floor(ms / 60000);
+    const msPart = Math.floor((ms % 1000) / 10);
+    const timeStr = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(msPart).padStart(2, '0')}`;
+
+    this.state.lapRecords.push({ idx: this.state.lapRecords.length + 1, time: timeStr, timeMs: ms });
+    this.renderLapList();
+  },
+
+  renderLapList() {
+    const listEl = document.getElementById('lap-list');
+    if (!listEl) return;
+
+    let html = '';
+    // Luôn vẽ sẵn 20 dòng
+    for (let i = 1; i <= 20; i++) {
+      const rec = this.state.lapRecords[i - 1];
+      if (rec) {
+        html += `
+          <div class="lap-item filled fade-up">
+            <span class="lap-idx">${i}</span>
+            <span class="lap-time">${rec.time}</span>
+          </div>
+        `;
+      } else {
+        html += `
+          <div class="lap-item">
+            <span class="lap-idx">${i}</span>
+            <span class="lap-time" style="font-family:'JetBrains Mono',monospace;">--:--.--</span>
+          </div>
+        `;
+      }
+    }
+    listEl.innerHTML = html;
   },
 
   handlePrevCandidate() {
@@ -434,8 +526,10 @@ const app = {
     // TODO: Gửi lệnh START xuống bảng LED
     console.log('[LED CMD] Đã gửi lệnh START xuống cho bảng LED');
     this.state.swRunning = true;
+    this.state.swStart = Date.now(); // Ghi nhận thời điểm bắt đầu hệ thống
     this.setStatus('l1', 'ĐANG CHẠY...', '#40ff80', 'rgba(0,180,80,0.2)', 'rgba(0,200,80,0.5)');
     this.setStatus('l2', 'ĐANG CHẠY...', '#40ff80', 'rgba(0,180,80,0.2)', 'rgba(0,200,80,0.5)');
+
     // TODO: Bắt đầu polling thời gian từ ESP32
     // this.state.pollInterval = setInterval(() => this.pollLEDTime(), 200);
   },
@@ -499,6 +593,11 @@ const app = {
     clearInterval(this.state.pollInterval);
     this.state.swRunning = false;
     this.state.swElapsed = 0;
+
+    if (this.state.raceMode === 'mass-start') {
+      this.state.lapRecords = [];
+      this.renderLapList();
+    }
 
     console.log('[LED CMD] Đã gửi lệnh RESET xuống cho bảng LED');
 
@@ -700,6 +799,9 @@ const app = {
     document.getElementById('rv-nav-wrap').style.display = 'none';
     document.getElementById('btn-custom-lock').style.display = 'flex';
     document.getElementById('btn-rv-next').style.display = 'none';
+
+    // Khôi phục hiển thị Penalty cho chế độ Bracket
+    document.querySelectorAll('.rv-pen-wrap').forEach(el => el.style.display = '');
 
     // Ẩn triệt để panel bằng inline style (chống mọi lỗi ghi đè class)
     const candPanel = document.getElementById('rv-cand-panel');

@@ -794,3 +794,11 @@ th { background: #f8fafc; color: var(--text-3); font-weight: 600; text-transform
 .btn-cancel { background: rgba(100,150,255,0.1); color: #80a0ff; }
 .btn-confirm { background: #ff4757; color: #fff; box-shadow: 0 4px 15px rgba(255,71,87,0.3); }
 .btn-modal:active { transform: scale(0.95); }
+/* LAP PANEL STYLES */
+.lap-item { display: flex; justify-content: space-between; padding: 6px 12px; background: rgba(100,150,255,0.08); border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 14px; color: #fff; border-left: 3px solid var(--accent); }
+.lap-item .lap-idx { color: rgba(180,220,255,0.7); font-weight: 600; font-size: 12px; }
+.lap-item .lap-time { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #40ff80; }
+
+.lap-item { display: flex; justify-content: space-between; padding: 6px 12px; background: rgba(100,150,255,0.05); border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4); border-left: 3px solid rgba(100,150,255,0.2); }
+.lap-item.filled { background: rgba(100,150,255,0.15); color: #fff; border-left: 3px solid var(--accent); }
+.lap-item.filled .lap-time { color: #40ff80; }
