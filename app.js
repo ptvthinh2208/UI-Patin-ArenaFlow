@@ -185,8 +185,8 @@ const app = {
 
     // Reset display
     ['l1', 'l2'].forEach(id => {
-      document.getElementById(`${id}-time`).firstChild.textContent = '00:00';
-      document.getElementById(`${id}-ms`).textContent = '.00';
+      document.getElementById(`${id}-time`).firstChild.textContent = '0';
+      document.getElementById(`${id}-ms`).textContent = '.000s';
       document.getElementById(`${id}-pen`).innerText = '0';
     });
 
@@ -203,7 +203,7 @@ const app = {
       document.getElementById('l2-name').innerText = 'VĐV Làn 2';
       document.getElementById('l1-status').innerText = 'Chờ bắt đầu';
       document.getElementById('l2-status').innerText = 'Chờ bắt đầu';
-      document.getElementById('btn-custom-lock').style.display = 'flex';
+      document.getElementById('btn-custom-lock').style.display = 'none';
       document.getElementById('btn-rv-next').style.display = 'none';
       const candPanel = document.getElementById('rv-cand-panel');
       if (candPanel) { candPanel.classList.remove('active'); candPanel.style.display = 'none'; }
@@ -215,6 +215,7 @@ const app = {
       document.getElementById('rv-title').innerText = 'VÒNG LOẠI';
       document.getElementById('rv-nav-wrap').style.display = 'flex';
       document.getElementById('btn-rv-next').style.display = 'flex';
+      document.getElementById('btn-custom-lock').style.display = 'flex';
       const candPanel = document.getElementById('rv-cand-panel');
       if (candPanel) { candPanel.style.display = ''; }
       this.state.lane1Idx = 0;
@@ -237,8 +238,8 @@ const app = {
     const swapBtn = document.getElementById('btn-swap-lanes');
     if (swapBtn) swapBtn.style.display = 'none';
 
-    document.getElementById('l1-time').firstChild.textContent = '00:00';
-    document.getElementById('l1-ms').textContent = '.00';
+    document.getElementById('l1-time').firstChild.textContent = '0';
+    document.getElementById('l1-ms').textContent = '.000s';
     document.getElementById('l1-pen').innerText = '0';
     this.setStatus('l1', 'Chờ bắt đầu');
 
@@ -272,10 +273,9 @@ const app = {
     }
 
     const ms = this.state.swElapsed;
-    const s = Math.floor(ms / 1000) % 60;
-    const m = Math.floor(ms / 60000);
-    const msPart = Math.floor((ms % 1000) / 10);
-    const timeStr = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(msPart).padStart(2, '0')}`;
+    const totalSecs = Math.floor(ms / 1000);
+    const msPart = ms % 1000;
+    const timeStr = `${totalSecs}.${String(msPart).padStart(3, '0')}s`;
 
     this.state.lapRecords.push({ idx: this.state.lapRecords.length + 1, time: timeStr, timeMs: ms });
     this.renderLapList();
@@ -292,15 +292,15 @@ const app = {
       if (rec) {
         html += `
           <div class="lap-item filled fade-up">
-            <span class="lap-idx">${i}</span>
+            <span class="lap-idx">Vị trí ${i}</span>
             <span class="lap-time">${rec.time}</span>
           </div>
         `;
       } else {
         html += `
           <div class="lap-item">
-            <span class="lap-idx">${i}</span>
-            <span class="lap-time" style="font-family:'JetBrains Mono',monospace;">--:--.--</span>
+            <span class="lap-idx">Vị trí ${i}</span>
+            <span class="lap-time" style="font-family:'JetBrains Mono',monospace;">--.---s</span>
           </div>
         `;
       }
@@ -429,11 +429,10 @@ const app = {
     const i2 = this.state.lane2Idx;
 
     const formatTime = (sec) => {
-      if (!sec || sec <= 0) return '00:00.00';
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60);
-      const ms = Math.floor((sec * 100) % 100);
-      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
+      if (!sec || sec <= 0) return '0.000s';
+      const s = Math.floor(sec);
+      const ms = Math.floor((sec * 1000) % 1000);
+      return `${s}.${String(ms).padStart(3, '0')}s`;
     };
 
     const buildHtml = (targetLane) => {
@@ -491,13 +490,12 @@ const app = {
 
   updateLaneTimeDisplay(laneId, elapsedMs) {
     if (!elapsedMs) elapsedMs = 0;
-    const ms = elapsedMs % 1000;
-    const s = Math.floor(elapsedMs / 1000) % 60;
-    const m = Math.floor(elapsedMs / 60000);
+    const msPart = elapsedMs % 1000;
+    const totalSecs = Math.floor(elapsedMs / 1000);
     const display = document.getElementById(`${laneId}-time`);
     if (display) {
-      display.firstChild.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-      document.getElementById(`${laneId}-ms`).textContent = `.${String(Math.floor(ms / 10)).padStart(2, '0')}`;
+      display.firstChild.textContent = String(totalSecs);
+      document.getElementById(`${laneId}-ms`).textContent = `.${String(msPart).padStart(3, '0')}s`;
     }
   },
 
@@ -603,9 +601,9 @@ const app = {
 
     ['l1', 'l2'].forEach(id => {
       const el = document.getElementById(`${id}-time`);
-      if (el) el.firstChild.textContent = '00:00';
+      if (el) el.firstChild.textContent = '0';
       const ms = document.getElementById(`${id}-ms`);
-      if (ms) ms.textContent = '.00';
+      if (ms) ms.textContent = '.000s';
       this.setStatus(id, 'CHỜ BẮT ĐẦU', '#ffcc40', 'rgba(255,190,30,0.18)', 'rgba(255,190,30,0.45)');
     });
   },
@@ -648,7 +646,7 @@ const app = {
     this.state.bracketSize = topN;
 
     this.saveToLocal();
-    const roundNames = { 16: 'Vòng 1/16', 8: 'Tứ kết', 4: 'Bán kết', 2: 'Chung kết' };
+    const roundNames = { 16: 'Vòng 1/16', 8: 'Vòng 1/8', 4: 'Vòng 1/4', 2: 'Chung kết' };
     this.showToast(`Đã chọn Top ${topN}. Tạo Bracket ${roundNames[topN]}...`);
     this.navigate('bracket');
     this.generateBracket();
@@ -739,8 +737,8 @@ const app = {
     // ── Các cột tiếp theo (TBD) ──
     let remaining = bracketSize / 2;
     const nextRounds = [];
-    if (bracketSize === 16) nextRounds.push({ n: 8, label: 'Tứ kết (1/8)', cls: 'bwc-qf' });
-    if (bracketSize >= 8) nextRounds.push({ n: 4, label: 'Bán kết', cls: 'bwc-sf' });
+    if (bracketSize === 16) nextRounds.push({ n: 8, label: 'Vòng 1/8', cls: 'bwc-qf' });
+    if (bracketSize >= 8) nextRounds.push({ n: 4, label: 'Vòng 1/4', cls: 'bwc-sf' });
     if (bracketSize >= 4) nextRounds.push({ n: 2, label: 'Chung kết', cls: 'bwc-final' });
 
     for (const round of nextRounds) {
@@ -789,8 +787,8 @@ const app = {
 
     // Reset display and set names
     ['l1', 'l2'].forEach(id => {
-      document.getElementById(`${id}-time`).firstChild.textContent = '00:00';
-      document.getElementById(`${id}-ms`).textContent = '.00';
+      document.getElementById(`${id}-time`).firstChild.textContent = '0';
+      document.getElementById(`${id}-ms`).textContent = '.000s';
       document.getElementById(`${id}-pen`).innerText = '0';
       this.setStatus(id, 'Đang chờ bắt đầu');
     });

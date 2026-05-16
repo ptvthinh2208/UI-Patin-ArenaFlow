@@ -638,7 +638,7 @@ th { background: #f8fafc; color: var(--text-3); font-weight: 600; text-transform
   text-shadow: 0 0 28px rgba(120,200,255,0.7), 0 0 60px rgba(80,160,255,0.3);
   letter-spacing: 2px; white-space: nowrap;
 }
-.rv-m-ms { font-size: 26px; color: rgba(180,220,255,0.7); }
+.rv-m-ms { font-size: inherit; color: inherit; }
 /* STATUS BADGE — nổi bật, dễ đọc */
 .rv-m-status {
   display: inline-flex; align-items: center; justify-content: center;
