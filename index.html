@@ -57,6 +57,7 @@
         </div>
       </div>
       <div class="nav-status">
+        <button onclick="window.open('display.html', '_blank')" style="background: rgba(100,150,255,0.2); border: 1px solid rgba(100,150,255,0.4); color: #80a0ff; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; margin-right: 10px; font-weight: 600;">📺 MỞ MÀN HÌNH</button>
         <div class="status-dot"></div>
         <span>ESP32 Online</span>
       </div>
@@ -292,6 +293,16 @@
             </svg>
           </button>
           <div class="rv-title" id="rv-title">Tập luyện</div>
+          
+          <!-- Bộ chọn Lượt đua (Round) -->
+          <div class="rv-round-selector">
+            <span class="round-label">LƯỢT:</span>
+            <button class="round-btn" onclick="app.setRound(1)">1</button>
+            <button class="round-btn" onclick="app.setRound(2)">2</button>
+            <button class="round-btn" onclick="app.setRound(3)">3</button>
+            <button class="round-btn" onclick="app.setRound(4)">4</button>
+            <button class="round-btn" onclick="app.setRound(5)">5</button>
+          </div>
         </div>
         <div class="rv-header-right" id="rv-nav-wrap" style="display:none;">
           <button class="rv-icon-btn" onclick="app.handlePrevCandidate()">

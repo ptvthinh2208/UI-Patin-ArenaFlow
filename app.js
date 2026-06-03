@@ -12,14 +12,75 @@ const app = {
     tournamentName: "Giải đấu trượt Patin chuyên nghiệp",
     lane1Idx: 0,
     lane2Idx: 1,
-    lapRecords: []
+    lapRecords: [],
+    // Feature: Update Round indicator on nav bar
+    currentRound: 1
+    //End update feat
   },
-
+  // Feature: Update Round indicator on nav bar
+  channel: new BroadcastChannel('patin_arena_channel'),
+  //End update feat
   // ── KHỞI TẠO ──
   init() {
     this.loadState(); // Tải lại dữ liệu cũ nếu có
     this.checkAuth();
     this.startClock();
+    // Feature: Update Round indicator on nav bar
+    // Auto-broadcast state for the external display screen (10 times a second)
+    setInterval(() => {
+      const raceView = document.getElementById('race-view');
+      if (raceView && raceView.classList.contains('active')) {
+        this.broadcastState();
+      }
+    }, 100);
+  },
+
+  broadcastState() {
+    const rvTitle = document.getElementById('rv-title');
+    if (!rvTitle) return;
+
+    const getStateFromLane = (laneId) => {
+      const timeEl = document.getElementById(`${laneId}-time`);
+      const msEl = document.getElementById(`${laneId}-ms`);
+      const statusEl = document.getElementById(`${laneId}-status`);
+      const nameEl = document.getElementById(`${laneId}-name`);
+      const penEl = document.getElementById(`${laneId}-pen`);
+
+      return {
+        name: nameEl ? nameEl.innerHTML : '---',
+        timeMain: (timeEl && timeEl.firstChild) ? timeEl.firstChild.textContent : '0',
+        timeMs: msEl ? msEl.textContent : '.000s',
+        penalty: penEl ? penEl.innerText : '0',
+        statusText: statusEl ? statusEl.innerText : 'CHỜ BẮT ĐẦU',
+        statusColor: statusEl ? statusEl.style.color : '#ffcc40',
+        statusBg: statusEl ? statusEl.style.background : 'rgba(255,190,30,0.18)',
+        statusBorder: statusEl ? statusEl.style.borderColor : 'rgba(255,190,30,0.45)'
+      };
+    };
+
+    const payload = {
+      title: rvTitle.innerText,
+      layoutMode: this.state.layoutMode || 'pk',
+      currentRound: this.state.currentRound || 1,
+      lane1: getStateFromLane('l1'),
+      lane2: getStateFromLane('l2')
+    };
+
+    this.channel.postMessage({ type: 'STATE_UPDATE', payload });
+  },
+
+  setRound(round) {
+    this.state.currentRound = round;
+    document.querySelectorAll('.round-btn').forEach((btn, idx) => {
+      if (idx + 1 === round) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+    this.showToast(`Đang đua: Lượt ${round}`);
+    this.broadcastState();
+    //End update new feat
   },
 
   loadState() {
@@ -90,6 +151,12 @@ const app = {
     if (pageId === 'pro' && this.state.currentCandidates.length > 0) {
       this.renderCSVPreview();
     }
+    // Feature: Update Round indicator on nav bar
+    // Nếu vào màn hình đua thì đồng bộ lại hiển thị Lượt (Round)
+    if (pageId === 'race-view') {
+      this.setRound(this.state.currentRound || 1);
+    }
+    //End update new feat
 
     window.scrollTo(0, 0);
   },
